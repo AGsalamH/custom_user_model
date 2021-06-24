@@ -5,6 +5,3 @@
     - BaseUserManager
 
 ---
-
-### Bugs
-1. Can't create users using the admin interface, Cuz i need to override UserCreationForm.
