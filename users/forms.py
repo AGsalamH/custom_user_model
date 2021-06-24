@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate
 from users.models import User
 from django import forms
 from django.utils.translation import gettext_lazy as _
@@ -60,17 +61,41 @@ class UserRegistrationForm(forms.ModelForm):
 # endregion
 
 class LoginForm(forms.Form):
+    '''
+    Login a user from the given email and password.
+    '''
+
     email = forms.EmailField(max_length=255)
     password = forms.CharField(max_length=120, widget=forms.PasswordInput())
 
-    def clean_email(self):
+    def __init__(self, request=None, **kwargs):
+        super().__init__(**kwargs)
+        self.request = request # to be able to use authenticate function here 
+        self.user = None  # authenticated user will be stored here
+
+    def clean(self):
         '''
-        Raises error if email Doesn't Exist
+        1. Checks if email belongs to a user
+        2. Tries to authenticate a user if it's found otherwise raises an error
         '''
         email = self.cleaned_data.get('email')
+        password = self.cleaned_data.get('password')
 
-        if User.objects.filter(email=email).exists():
-            return email
-        raise forms.ValidationError(_('Incorrect email.'))
+        if not User.objects.filter(email=email).exists():
+            # Raise error if no user matches this email
+            raise forms.ValidationError(_('Invalid email.'))
     
-    
+        user = authenticate(request=self.request, email=email, password=password)
+        if not user:
+            raise forms.ValidationError(_('Invalid credintials'))
+        self.user = user
+        return self.cleaned_data
+
+
+    def confirm_login_allowed(self):
+        '''
+        Checks if a user is_active or not before login
+        '''
+        if not self.user.is_active:
+            raise forms.ValidationError(_('This user has been deactivated.'))
+        return None
