@@ -1,5 +1,5 @@
 ### Django app
-- To create a custom User model
+- Creating a custom User model
 - Using:
     - AbstractBaseUser
     - BaseUserManager
